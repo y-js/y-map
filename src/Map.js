@@ -283,7 +283,7 @@ function extend (Y /* :any */) {
       this.eventHandler.receivedOp(op)
     }
   }
-  Y.Map = new Y.utils.CustomType({
+  Y.extend('Map', new Y.utils.CustomType({
     class: YMap,
     createType: function * YMapCreator () {
       var modelid = this.store.getNextOpId()
@@ -310,7 +310,7 @@ function extend (Y /* :any */) {
       }
       return new YMap(os, model, contents, opContents)
     }
-  })
+  }))
 }
 
 module.exports = extend
