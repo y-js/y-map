@@ -145,7 +145,7 @@ for (let database of databases) {
           name: 'stuff'
         }])
         // update, oldValue is in contents
-        var array = yield y1.set('stuff', Y.Array)
+        yield y1.set('stuff', Y.Array)
         expect(event).toEqual([{
           type: 'update',
           object: y1,
