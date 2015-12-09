@@ -162,9 +162,8 @@ function extend (Y /* :any */) {
         if (value instanceof Y.utils.CustomType) {
           // construct a new type
           this.os.requestTransaction(function *() {
-            var typeid = yield* value.createType.call(this)
-            var type = yield* this.getType(typeid)
-            insert.opContent = typeid
+            var type = yield* this.createType(value)
+            insert.opContent = type._model
             insert.id = this.store.getNextOpId()
             yield* this.applyCreatedOperations([insert])
             resolve(type)
@@ -285,18 +284,9 @@ function extend (Y /* :any */) {
     }
   }
   Y.extend('Map', new Y.utils.CustomType({
+    name: 'Map',
     class: YMap,
-    createType: function * YMapCreator () {
-      var modelid = this.store.getNextOpId()
-      var model = {
-        map: {},
-        struct: 'Map',
-        type: 'Map',
-        id: modelid
-      }
-      yield* this.applyCreatedOperations([model])
-      return modelid
-    },
+    struct: 'Map',
     initType: function * YMapInitializer (os, model) {
       var contents = {}
       var opContents = {}
