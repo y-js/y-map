@@ -132,6 +132,32 @@ for (let database of databases) {
         expect(map.get('yay')).toEqual(4)
         done()
       }))
+      it('observe deep properties', async(function * (done) {
+        var map1 = yield y1.set('map', Y.Map)
+        var calls = 0
+        var dmapid
+        map1.observe(function (events) {
+          calls++
+          var event = events[0]
+          expect(event.name).toEqual('deepmap')
+          dmapid = event.object.opContents.deepmap
+        })
+        yield flushAll()
+        var map3 = yield y3.get('map')
+        yield map3.set('deepmap', Y.Map)
+        yield flushAll()
+        var map2 = yield y2.get('map')
+        yield map2.set('deepmap', Y.Map)
+        yield flushAll()
+        var dmap1 = yield map1.get('deepmap')
+        var dmap2 = yield map2.get('deepmap')
+        var dmap3 = yield map3.get('deepmap')
+        expect(calls > 0).toBeTruthy()
+        expect(dmap1._model).toEqual(dmap2._model)
+        expect(dmap1._model).toEqual(dmap3._model)
+        expect(dmap1._model).toEqual(dmapid)
+        done()
+      }))
       it('throws add & update & delete events (with type and primitive content)', async(function * (done) {
         var event
         yield flushAll()

@@ -91,7 +91,9 @@ function extend (Y /* :any */) {
             throw new Error('Unexpected Operation!')
           }
         }
-        this.eventHandler.callEventListeners(userEvents)
+        if (userEvents.length > 0) {
+          this.eventHandler.callEventListeners(userEvents)
+        }
       })
     }
     get (key) {
