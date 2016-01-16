@@ -1,5 +1,5 @@
 {
-  "name": "map",
+  "name": "y-map",
   "version": "0.7.3",
   "description": "Map Type for Yjs",
   "main": "./src/Map.js",

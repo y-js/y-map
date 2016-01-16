@@ -1,7 +1,7 @@
 
 # Map Type for [Yjs](https://github.com/y-js/yjs)
 
-Manage map-lik data with this shareable list type. You can insert and delete arbitrary objects (also custom types for Yjs) in the list type.
+Manage map-like data with this shareable map type. You can insert and delete arbitrary objects (also custom types for Yjs).
 
 ## Use it!
 Retrieve this with bower or npm.
@@ -23,59 +23,39 @@ npm install y-map --save
 ```
 
 
-### List Object
+# Y.Map
+Y.Map mimics the behaviour of a javascript Object. You can create, update, and remove properies on this type. Furthermore, you can observe changes on this type as you can observe changes on Javascript Objects with [Object.observe](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/observe) - an ECMAScript 7 proposal ~~which is likely to become accepted by the committee~~. Until then, we have our own implementation.
 
 ##### Reference
-* .insert(position, content)
-  * Insert content at a position
-* .insertContents(position, contents)
-  * Insert a set of content at a position. This expects that contents is an array of content.
-* .push(content)
-  * Insert content at the end of the list
-* .delete(position, length)
-  * Delete content. The *length* parameter is optional and defaults to 1
-* .val()
-  * Retrieve all content as an Array Object
-* .val(position)
-  * Retrieve content from a position
-* .ref(position)
-  * Retrieve a reference to the element on a *position*.
-  * You can call `ref.getNext()` and `ref.getPrev()` to get the next/previous reference
-  * You can call `ref.getNext(i)` and `ref.getPrev(i)` to get the i-th next/previous reference
-  * You can call `ref.val()` to get the element, to which the reference points (`y.ref(1).val() === y.val(1)`)
-* .observe(f)
-  * The observer is called whenever something on this list changed. (throws insert, and delete events)
+* .get(name)
+  * Retrieve the value of a property. If the value is a type, `.get(name)` returns a promise
+* .set(name, value)
+  * Set/update a property. `value` may be a primitive type, or a custom type definition (e.g. `Y.Map`)
+* .delete(name)
+  * Delete a property
+* .observe(observer)
+  * The `observer` is called whenever something on this object changes. Throws *add*, *update*, and *delete* events
+* .observePath(path, observer)
+  * `path` is an array of property names. `observer` is called when the property under `path` is set, deleted, or updated
 * .unobserve(f)
   * Delete an observer
 
-
 # A note on intention preservation
-If two users insert something at the same position concurrently, the content that was inserted by the user with the higher user-id will be to the right of the other content. In the OT world we often speak of *intention preservation*, which is very loosely defined in most cases. This type has the following notion of intention preservation: When a user inserts content *c* after a set of content *C_left*, and before a set of content *C_right*, then *C_left* will be always to the left of c, and *C_right* will be always to the right of *c*. This property will also hold when content is deleted or when a deletion is undone.
+When users create/update/delete the same property concurrently, only one change will prevail. Changes on different properties do not conflict with each other.
 
 # A note on time complexities
-* .insert(position, content)
-  * O(position)
-* .insertContents(position, contents)
-  * O(position + |contents|)
-* .push(content)
+* .get(name)
   * O(1)
-* .delete(position, length)
-  * O(position)
-* .val()
-  * O(|ylist|)
-* .val(position)
-  * O(position|)
+* .set(name, value)
+  * O(1)
+* .delete(name)
+  * O(1)
 * Apply a delete operation from another user
   * O(1)
-* Apply an insert operation from another user
+* Apply an update operation from another user (set/update a property)
   * Yjs does not transform against operations that do not conflict with each other.
-  * An operation conflicts with another operation if it intends to be inserted at the same position.
+  * An operation conflicts with another operation if it changes the same property.
   * Overall worst case complexety: O(|conflicts|!)
-
-
-# Issues
-* Support moving of objects
-* Create a polymer element
 
 ## License
 Yjs is licensed under the [MIT License](./LICENSE.txt).
