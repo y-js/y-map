@@ -96,6 +96,15 @@ function extend (Y /* :any */) {
         }
       })
     }
+    _destroy () {
+      this.eventHandler.destroy()
+      this.eventHandler = null
+      this.contents = null
+      this.opContents = null
+      this._model = null
+      this.os = null
+      this.map = null
+    }
     get (key) {
       // return property.
       // if property does not exist, return null

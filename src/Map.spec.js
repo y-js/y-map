@@ -4,7 +4,7 @@
 
 var Y = require('../../yjs/src/SpecHelper.js')
 var numberOfYMapTests = 1000
-var repeatMapTeasts = 20
+var repeatMapTeasts = 5
 
 for (let database of databases) {
   describe(`Map Type (DB: ${database})`, function () {
