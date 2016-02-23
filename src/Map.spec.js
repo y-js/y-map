@@ -3,8 +3,8 @@
 'use strict'
 
 var Y = require('../../yjs/src/SpecHelper.js')
-var numberOfYMapTests = 1000
-var repeatMapTeasts = 5
+var numberOfYMapTests = 100
+var repeatMapTeasts = 1
 
 for (let database of databases) {
   describe(`Map Type (DB: ${database})`, function () {

@@ -11,17 +11,10 @@ Retrieve this with bower or npm.
 bower install y-map --save
 ```
 
-and include the js library.
-
-```
-<script src="./bower_components/y-map/y-map.js"></script>
-```
-
 ##### NPM
 ```
 npm install y-map --save
 ```
-
 
 # Y.Map
 Y.Map mimics the behaviour of a javascript Object. You can create, update, and remove properies on this type. Furthermore, you can observe changes on this type as you can observe changes on Javascript Objects with [Object.observe](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/observe) - an ECMAScript 7 proposal ~~which is likely to become accepted by the committee~~. Until then, we have our own implementation.
