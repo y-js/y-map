@@ -34,7 +34,9 @@ Y.Map mimics the behaviour of a javascript Object. You can create, update, and r
 * .observe(observer)
   * The `observer` is called whenever something on this object changes. Throws *add*, *update*, and *delete* events
 * .observePath(path, observer)
-  * `path` is an array of property keys. `observer` is called when the property under `path` is set, deleted, or updated
+  * `path` is an array of property keys
+  * `observer` is when the value under the path is found.
+  * `observer` is called when the property under `path` is set, deleted, or updated
 * .unobserve(f)
   * Delete an observer
 
