@@ -109,8 +109,8 @@ function extend (Y /* :any */) {
       // return property.
       // if property does not exist, return null
       // if property is a type, return a promise
-      if (key == null) {
-        throw new Error('You must specify key!')
+      if (key == null || typeof key !== 'string') {
+        throw new Error('You must specify a key (as string)!')
       }
       if (this.opContents[key] == null) {
         return this.contents[key]
@@ -133,8 +133,25 @@ function extend (Y /* :any */) {
     getPrimitive (key) {
       if (key == null) {
         return Y.utils.copyObject(this.contents)
+      } else if (typeof key !== 'string') {
+        throw new Error('Key is expected to be a string!')
       } else {
         return this.contents[key]
+      }
+    }
+    getType (key) {
+      if (key == null || typeof key !== 'string') {
+        throw new Error('You must specify a key (as string)!')
+      } else if (this.opContents[key] != null) {
+        return new Promise((resolve) => {
+          var oid = this.opContents[key]
+          this.os.requestTransaction(function *() {
+            var type = yield* this.getType(oid)
+            resolve(type)
+          })
+        })
+      } else {
+        return Promise.reject('No property specified for this key!')
       }
     }
     delete (key) {
