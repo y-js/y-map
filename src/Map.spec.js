@@ -205,6 +205,9 @@ for (let database of databases) {
         function set (map) {
           map.set('somekey', getRandomNumber())
         },
+        function setType (map) {
+          map.set('somekey', Y.Array)
+        },
         function delete_ (map) {
           map.delete('somekey')
         }
