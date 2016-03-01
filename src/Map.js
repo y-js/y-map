@@ -124,6 +124,15 @@ function extend (Y /* :any */) {
         })
       }
     }
+    keys () {
+      return this.contents.keys().concat(this.opContents.keys)
+    }
+    keysPrimitives () {
+      return this.contents.keys()
+    }
+    keysTypes () {
+      return this.opContents.keys()
+    }
     /*
       If there is a primitive (not a custom type), then return it.
       Returns all primitive values, if propertyName is specified!
@@ -186,10 +195,11 @@ function extend (Y /* :any */) {
         struct: 'Insert'
       }
       return new Promise((resolve) => {
-        if (value instanceof Y.utils.CustomType) {
+        var typeDefinition = Y.utils.isTypeDefinition(value)
+        if (typeDefinition !== false) {
           // construct a new type
           this.os.requestTransaction(function *() {
-            var type = yield* this.createType(value)
+            var type = yield* this.createType(typeDefinition)
             insert.opContent = type._model
             insert.id = this.store.getNextOpId()
             yield* this.applyCreatedOperations([insert])

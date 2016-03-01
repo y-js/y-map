@@ -31,6 +31,12 @@ Y.Map mimics the behaviour of a javascript Object. You can create, update, and r
   * Set/update a property. `value` may be a primitive type, or a custom type definition (e.g. `map.set(key, Y.Map)`)
 * .delete(key)
   * Delete a property
+* .keys()
+  * Returns all keys for all values
+* .keysPrimitives()
+  * Returns all keys for all primitive values
+* .keysTypes()
+  * Returns all keys for all type values
 * .observe(observer)
   * The `observer` is called whenever something on this object changes. Throws *add*, *update*, and *delete* events
 * .observePath(path, observer)

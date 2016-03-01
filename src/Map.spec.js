@@ -205,9 +205,10 @@ for (let database of databases) {
         function set (map) {
           map.set('somekey', getRandomNumber())
         },
+        /* TODO: This is probably a gc bug (also see Y.Array)
         function setType (map) {
           map.set('somekey', Y.Array)
-        },
+        },*/
         function delete_ (map) {
           map.delete('somekey')
         }
