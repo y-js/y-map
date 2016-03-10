@@ -42,7 +42,17 @@ function extend (Y /* :any */) {
           // compute op event
           if (op.struct === 'Insert') {
             if (op.left === null) {
+              var value
+              // TODO: what if op.deleted??? I partially handles this case here.. (maybe from the previous version)
               if (op.opContent != null) {
+                value = () => {// eslint-disable-line
+                  return new Promise((resolve) => {
+                    this.os.requestTransaction(function *() {// eslint-disable-line
+                      var type = yield* this.getType(op.opContent)
+                      resolve(type)
+                    })
+                  })
+                }
                 delete this.contents[key]
                 if (op.deleted) {
                   delete this.opContents[key]
@@ -50,6 +60,7 @@ function extend (Y /* :any */) {
                   this.opContents[key] = op.opContent
                 }
               } else {
+                value = op.content
                 delete this.opContents[key]
                 if (op.deleted) {
                   delete this.contents[key]
@@ -63,14 +74,16 @@ function extend (Y /* :any */) {
                 insertEvent = {
                   name: key,
                   object: this,
-                  type: 'add'
+                  type: 'add',
+                  value: value
                 }
               } else {
                 insertEvent = {
                   name: key,
                   object: this,
                   oldValue: oldValue,
-                  type: 'update'
+                  type: 'update',
+                  value: value
                 }
               }
               userEvents.push(insertEvent)
@@ -125,13 +138,13 @@ function extend (Y /* :any */) {
       }
     }
     keys () {
-      return this.contents.keys().concat(this.opContents.keys)
+      return Object.keys(this.contents).concat(Object.keys(this.opContents))
     }
     keysPrimitives () {
-      return this.contents.keys()
+      return Object.keys(this.contents)
     }
     keysTypes () {
-      return this.opContents.keys()
+      return Object.keys(this.opContents)
     }
     /*
       If there is a primitive (not a custom type), then return it.
