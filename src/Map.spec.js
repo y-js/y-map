@@ -3,8 +3,17 @@
 'use strict'
 
 var Y = require('../../yjs/src/SpecHelper.js')
-var numberOfYMapTests = 100
-var repeatMapTeasts = 1
+var numberOfYMapTests = 1000
+var repeatMapTeasts = 2
+
+function compareEvent (is, should) {
+  expect(is.length).toEqual(should.length)
+  for (var i = 0; i < is.length; i++) {
+    for (var key in should[i]) {
+      expect(should[i][key]).toEqual(is[i][key])
+    }
+  }
+}
 
 for (let database of databases) {
   describe(`Map Type (DB: ${database})`, function () {
@@ -165,14 +174,14 @@ for (let database of databases) {
           event = e // just put it on event, should be thrown synchronously anyway
         })
         y1.set('stuff', 4)
-        expect(event).toEqual([{
+        compareEvent(event, [{
           type: 'add',
           object: y1,
           name: 'stuff'
         }])
         // update, oldValue is in contents
         yield y1.set('stuff', Y.Array)
-        expect(event).toEqual([{
+        compareEvent(event, [{
           type: 'update',
           object: y1,
           name: 'stuff',
@@ -189,7 +198,7 @@ for (let database of databases) {
 
             // delete
             y1.delete('stuff')
-            expect(event).toEqual([{
+            compareEvent(event, [{
               type: 'delete',
               name: 'stuff',
               object: y1,
@@ -205,10 +214,11 @@ for (let database of databases) {
         function set (map) {
           map.set('somekey', getRandomNumber())
         },
-        /* TODO: This is probably a gc bug (also see Y.Array)
         function setType (map) {
-          map.set('somekey', Y.Array)
-        },*/
+          map.set('somekey', Y.Array).then(function (array) {
+            array.insert(0, [1, 2, 3, 4])
+          })
+        },
         function delete_ (map) {
           map.delete('somekey')
         }
@@ -233,6 +243,12 @@ for (let database of databases) {
           promises.push(this.users[u].share.root.get('Map'))
         }
         this.maps = yield Promise.all(promises)
+        done()
+      }))
+      it(`succeed after ${numberOfYMapTests} actions, no GC, no disconnect`, async(function * (done) {
+        yield applyRandomTransactionsNoGCNoDisconnect(this.users, this.maps, randomMapTransactions, numberOfYMapTests)
+        yield flushAll()
+        yield compareMapValues(this.maps)
         done()
       }))
       it(`succeed after ${numberOfYMapTests} actions, no GC, all users disconnecting/reconnecting`, async(function * (done) {
