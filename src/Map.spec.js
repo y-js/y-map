@@ -1,4 +1,4 @@
-/* global createUsers, databases, compareAllUsers, getRandomNumber, applyRandomTransactionsAllRejoinNoGC, applyRandomTransactionsWithGC, async, describeManyTimes */
+/* global createUsers, databases, compareAllUsers, getRandomNumber, applyRandomTransactionsNoGCNoDisconnect, applyRandomTransactionsAllRejoinNoGC, applyRandomTransactionsWithGC, async, describeManyTimes */
 /* eslint-env browser,jasmine */
 'use strict'
 
