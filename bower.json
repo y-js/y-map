@@ -19,6 +19,6 @@
   "license": "MIT",
   "ignore": [],
   "dependencies": {
-    "yjs": "~9.0"
+    "yjs": "^10.0.0"
   }
 }
