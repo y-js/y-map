@@ -214,13 +214,13 @@ function extend (Y /* :any */) {
           this.os.requestTransaction(function *() {
             var type = yield* this.createType(typeDefinition)
             insert.opContent = type._model
-            insert.id = this.store.getNextOpId()
+            insert.id = this.store.getNextOpId(1)
             yield* this.applyCreatedOperations([insert])
             resolve(type)
           })
         } else {
           insert.content = value
-          insert.id = this.os.getNextOpId()
+          insert.id = this.os.getNextOpId(1)
           var eventHandler = this.eventHandler
           eventHandler.awaitAndPrematurelyCall([insert])
           this.os.requestTransaction(function *() {
