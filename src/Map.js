@@ -60,12 +60,12 @@ function extend (Y /* :any */) {
                   this.opContents[key] = op.opContent
                 }
               } else {
-                value = op.content
+                value = op.content[0]
                 delete this.opContents[key]
                 if (op.deleted) {
                   delete this.contents[key]
                 } else {
-                  this.contents[key] = op.content
+                  this.contents[key] = op.content[0]
                 }
               }
               this.map[key] = op.id
@@ -219,7 +219,7 @@ function extend (Y /* :any */) {
             resolve(type)
           })
         } else {
-          insert.content = value
+          insert.content = [value]
           insert.id = this.os.getNextOpId()
           var eventHandler = this.eventHandler
           eventHandler.awaitAndPrematurelyCall([insert])
@@ -346,7 +346,7 @@ function extend (Y /* :any */) {
         if (op.opContent != null) {
           opContents[name] = op.opContent
         } else {
-          contents[name] = op.content
+          contents[name] = op.content[0]
         }
       }
       return new YMap(os, model, contents, opContents)
