@@ -3,15 +3,12 @@
 'use strict'
 
 var Y = require('../../yjs/src/SpecHelper.js')
-var numberOfYMapTests = 1000
-var repeatMapTeasts = 2
+var numberOfYMapTests = 500
+var repeatMapTeasts = 200
 
 function compareEvent (is, should) {
-  expect(is.length).toEqual(should.length)
-  for (var i = 0; i < is.length; i++) {
-    for (var key in should[i]) {
-      expect(should[i][key]).toEqual(is[i][key])
-    }
+  for (var key in should) {
+    expect(should[key]).toEqual(is[key])
   }
 }
 
@@ -145,9 +142,8 @@ for (let database of databases) {
         var map1 = yield y1.set('map', Y.Map)
         var calls = 0
         var dmapid
-        map1.observe(function (events) {
+        map1.observe(function (event) {
           calls++
-          var event = events[0]
           expect(event.name).toEqual('deepmap')
           dmapid = event.object.opContents.deepmap
         })
@@ -174,36 +170,36 @@ for (let database of databases) {
           event = e // just put it on event, should be thrown synchronously anyway
         })
         y1.set('stuff', 4)
-        compareEvent(event, [{
+        compareEvent(event, {
           type: 'add',
           object: y1,
           name: 'stuff'
-        }])
+        })
         // update, oldValue is in contents
         yield y1.set('stuff', Y.Array)
-        compareEvent(event, [{
+        compareEvent(event, {
           type: 'update',
           object: y1,
           name: 'stuff',
           oldValue: 4
-        }])
+        })
 
         y1.get('stuff').then(function (replacedArray) {
           // update, oldValue is in opContents
           y1.set('stuff', 5)
-          var getYArray = event[0].oldValue
+          var getYArray = event.oldValue
           expect(typeof getYArray.constructor === 'function').toBeTruthy()
           getYArray().then(function (array) {
             expect(array).toEqual(replacedArray)
 
             // delete
             y1.delete('stuff')
-            compareEvent(event, [{
+            compareEvent(event, {
               type: 'delete',
               name: 'stuff',
               object: y1,
               oldValue: 5
-            }])
+            })
             done()
           })
         })

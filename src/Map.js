@@ -17,95 +17,85 @@ function extend (Y /* :any */) {
       this.map = Y.utils.copyObject(model.map)
       this.contents = contents
       this.opContents = opContents
-      this.eventHandler = new Y.utils.EventHandler(ops => {
-        var userEvents = []
-        for (var i = 0; i < ops.length; i++) {
-          var op = ops[i]
-          var oldValue
-          // key is the name to use to access (op)content
-          var key = op.struct === 'Delete' ? op.key : op.parentSub
+      this.eventHandler = new Y.utils.EventHandler(op => {
+        var oldValue
+        // key is the name to use to access (op)content
+        var key = op.struct === 'Delete' ? op.key : op.parentSub
 
-          // compute oldValue
-          if (this.opContents[key] != null) {
-            let prevType = this.opContents[key]
-            oldValue = () => {// eslint-disable-line
-              return new Promise((resolve) => {
-                this.os.requestTransaction(function *() {// eslint-disable-line
-                  var type = yield* this.getType(prevType)
-                  resolve(type)
-                })
+        // compute oldValue
+        if (this.opContents[key] != null) {
+          let prevType = this.opContents[key]
+          oldValue = () => {// eslint-disable-line
+            return new Promise((resolve) => {
+              this.os.requestTransaction(function *() {// eslint-disable-line
+                var type = yield* this.getType(prevType)
+                resolve(type)
               })
-            }
-          } else {
-            oldValue = this.contents[key]
+            })
           }
-          // compute op event
-          if (op.struct === 'Insert') {
-            if (op.left === null) {
-              var value
-              // TODO: what if op.deleted??? I partially handles this case here.. (maybe from the previous version)
-              if (op.opContent != null) {
-                value = () => {// eslint-disable-line
-                  return new Promise((resolve) => {
-                    this.os.requestTransaction(function *() {// eslint-disable-line
-                      var type = yield* this.getType(op.opContent)
-                      resolve(type)
-                    })
+        } else {
+          oldValue = this.contents[key]
+        }
+        // compute op event
+        if (op.struct === 'Insert') {
+          if (op.left === null) {
+            var value
+            // TODO: what if op.deleted??? I partially handles this case here.. (maybe from the previous version)
+            if (op.opContent != null) {
+              value = () => {// eslint-disable-line
+                return new Promise((resolve) => {
+                  this.os.requestTransaction(function *() {// eslint-disable-line
+                    var type = yield* this.getType(op.opContent)
+                    resolve(type)
                   })
-                }
-                delete this.contents[key]
-                if (op.deleted) {
-                  delete this.opContents[key]
-                } else {
-                  this.opContents[key] = op.opContent
-                }
-              } else {
-                value = op.content[0]
-                delete this.opContents[key]
-                if (op.deleted) {
-                  delete this.contents[key]
-                } else {
-                  this.contents[key] = op.content[0]
-                }
+                })
               }
-              this.map[key] = op.id
-              var insertEvent
-              if (oldValue === undefined) {
-                insertEvent = {
-                  name: key,
-                  object: this,
-                  type: 'add',
-                  value: value
-                }
-              } else {
-                insertEvent = {
-                  name: key,
-                  object: this,
-                  oldValue: oldValue,
-                  type: 'update',
-                  value: value
-                }
-              }
-              userEvents.push(insertEvent)
-            }
-          } else if (op.struct === 'Delete') {
-            if (Y.utils.compareIds(this.map[key], op.target)) {
-              delete this.opContents[key]
               delete this.contents[key]
-              var deleteEvent = {
+              if (op.deleted) {
+                delete this.opContents[key]
+              } else {
+                this.opContents[key] = op.opContent
+              }
+            } else {
+              value = op.content[0]
+              delete this.opContents[key]
+              if (op.deleted) {
+                delete this.contents[key]
+              } else {
+                this.contents[key] = op.content[0]
+              }
+            }
+            this.map[key] = op.id
+            if (oldValue === undefined) {
+              this.eventHandler.callEventListeners({
+                name: key,
+                object: this,
+                type: 'add',
+                value: value
+              })
+            } else {
+              this.eventHandler.callEventListeners({
                 name: key,
                 object: this,
                 oldValue: oldValue,
-                type: 'delete'
-              }
-              userEvents.push(deleteEvent)
+                type: 'update',
+                value: value
+              })
             }
-          } else {
-            throw new Error('Unexpected Operation!')
           }
-        }
-        if (userEvents.length > 0) {
-          this.eventHandler.callEventListeners(userEvents)
+        } else if (op.struct === 'Delete') {
+          if (Y.utils.compareIds(this.map[key], op.target)) {
+            delete this.opContents[key]
+            delete this.contents[key]
+            this.eventHandler.callEventListeners({
+              name: key,
+              object: this,
+              oldValue: oldValue,
+              type: 'delete'
+            })
+          }
+        } else {
+          throw new Error('Unexpected Operation!')
         }
       })
     }
@@ -188,8 +178,13 @@ function extend (Y /* :any */) {
         modDel.key = key
         eventHandler.awaitAndPrematurelyCall([modDel])
         this.os.requestTransaction(function *() {
-          yield* this.applyCreatedOperations([del])
-          eventHandler.awaitedDeletes(1)
+          var d = yield* this.getInsertion(del.target)
+          if (d.deleted) {
+            eventHandler._tryCallEvents(1)
+          } else {
+            yield* this.applyCreatedOperations([del])
+            eventHandler.awaitedDeletes(1)
+          }
         })
       }
     }
@@ -252,18 +247,15 @@ function extend (Y /* :any */) {
     */
     observePath (path, f) {
       var self = this
-      function observeProperty (events) {
+      function observeProperty (event) {
         // call f whenever path changes
-        for (var i = 0; i < events.length; i++) {
-          var event = events[i]
-          if (event.name === propertyName) {
-            // call this also for delete events!
-            var property = self.get(propertyName)
-            if (property instanceof Promise) {
-              property.then(f)
-            } else {
-              f(property)
-            }
+        if (event.name === propertyName) {
+          // call this also for delete events!
+          var property = self.get(propertyName)
+          if (property instanceof Promise) {
+            property.then(f)
+          } else {
+            f(property)
           }
         }
       }
@@ -298,18 +290,15 @@ function extend (Y /* :any */) {
             return Promise.resolve() // Promise does not return anything
           })
         }
-        var observer = function (events) {
-          for (var e = 0; e < events.length; e++) {
-            var event = events[e]
-            if (event.name === path[0]) {
-              if (deleteChildObservers != null) {
-                deleteChildObservers()
-              }
-              if (event.type === 'add' || event.type === 'update') {
-                resetObserverPath()
-              }
-              // TODO: what about the delete events?
+        var observer = function (event) {
+          if (event.name === path[0]) {
+            if (deleteChildObservers != null) {
+              deleteChildObservers()
             }
+            if (event.type === 'add' || event.type === 'update') {
+              resetObserverPath()
+            }
+            // TODO: what about the delete events?
           }
         }
         self.observe(observer)
