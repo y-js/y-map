@@ -1,6 +1,6 @@
 {
   "name": "y-map",
-  "version": "9.0.1",
+  "version": "9.0.2",
   "description": "Map Type for Yjs",
   "main": "./src/Map.js",
   "scripts": {
