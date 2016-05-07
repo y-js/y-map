@@ -48,6 +48,14 @@ for (let database of databases) {
         expect(map.get('one')).toEqual(1)
         done()
       }))
+      it('Map can set custom types (Map) - get also returns the type', async(function * (done) {
+        yield y1.set('Map', Y.Map)
+        var map = yield y1.get('Map')
+        map.set('one', 1)
+        map = yield y1.get('Map')
+        expect(map.get('one')).toEqual(1)
+        done()
+      }))
       it('Map can set custom types (Array)', async(function * (done) {
         var array = yield y1.set('Array', Y.Array)
         array.insert(0, [1, 2, 3])
