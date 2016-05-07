@@ -256,7 +256,8 @@ function extend (Y /* :any */) {
       }
 
       if (path.length < 1) {
-        throw new Error('Path must contain at least one element!')
+        f(this)
+        return Promise.resolve(function () {})
       } else if (path.length === 1) {
         var propertyName = path[0]
         var property = self.get(propertyName)
@@ -297,16 +298,16 @@ function extend (Y /* :any */) {
           }
         }
         self.observe(observer)
-        return resetObserverPath().then(
+        return resetObserverPath().then(function () {
           // this promise contains a function that deletes all the child observers
           // and how to unobserve the observe from this object
-          new Promise.resolve(function () { // eslint-disable-line
+          return Promise.resolve(function () { // eslint-disable-line
             if (deleteChildObservers != null) {
               deleteChildObservers()
             }
             self.unobserve(observer)
           })
-        )
+        })
       }
     }
     * _changed (transaction, op) {
