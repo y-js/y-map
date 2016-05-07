@@ -179,13 +179,7 @@ function extend (Y /* :any */) {
         modDel.key = key
         eventHandler.awaitAndPrematurelyCall([modDel])
         this.os.requestTransaction(function *() {
-          var d = yield* this.getInsertion(del.target)
-          if (d.deleted) {
-            eventHandler._tryCallEvents(1)
-          } else {
-            yield* this.applyCreatedOperations([del])
-            eventHandler.awaitedDeletes(1)
-          }
+          yield* eventHandler.awaitOps(this, this.applyCreatedOperations, [[del]])
         })
       }
     }
@@ -196,6 +190,7 @@ function extend (Y /* :any */) {
 
       var right = this.map[key] || null
       var insert /* :any */ = {
+        id: this.os.getNextOpId(1),
         left: null,
         right: right,
         origin: null,
@@ -203,25 +198,24 @@ function extend (Y /* :any */) {
         parentSub: key,
         struct: 'Insert'
       }
+      var eventHandler = this.eventHandler
       return new Promise((resolve) => {
         var typeDefinition = Y.utils.isTypeDefinition(value)
         if (typeDefinition !== false) {
+          var typeid = this.os.getNextOpId(1)
+          insert.opContent = typeid
           // construct a new type
+          eventHandler.awaitAndPrematurelyCall([insert])
           this.os.requestTransaction(function *() {
-            var type = yield* this.createType(typeDefinition)
-            insert.opContent = type._model
-            insert.id = this.store.getNextOpId(1)
-            yield* this.applyCreatedOperations([insert])
+            var type = yield* this.createType(typeDefinition, typeid)
+            yield* eventHandler.awaitOps(this, this.applyCreatedOperations, [[insert]])
             resolve(type)
           })
         } else {
           insert.content = [value]
-          insert.id = this.os.getNextOpId(1)
-          var eventHandler = this.eventHandler
           eventHandler.awaitAndPrematurelyCall([insert])
-          this.os.requestTransaction(function *() {
-            yield* this.applyCreatedOperations([insert])
-            eventHandler.awaitedInserts(1)
+          this.os.requestTransaction(function * () {
+            yield* eventHandler.awaitOps(this, this.applyCreatedOperations, [[insert]])
           })
           resolve(value)
         }
