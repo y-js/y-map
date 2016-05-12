@@ -4,7 +4,7 @@
 
 var Y = require('../../yjs/src/SpecHelper.js')
 var numberOfYMapTests = 500
-var repeatMapTeasts = 200
+var repeatMapTeasts = 2
 
 function compareEvent (is, should) {
   for (var key in should) {
