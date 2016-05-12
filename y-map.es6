@@ -177,10 +177,12 @@ function extend (Y /* :any */) {
         var eventHandler = this.eventHandler
         var modDel = Y.utils.copyObject(del)
         modDel.key = key
-        eventHandler.awaitAndPrematurelyCall([modDel])
         this.os.requestTransaction(function *() {
           yield* eventHandler.awaitOps(this, this.applyCreatedOperations, [[del]])
         })
+        // always remember to do that after this.os.requestTransaction
+        // (otherwise values might contain a undefined reference to type)
+        eventHandler.awaitAndPrematurelyCall([modDel])
       }
     }
     set (key, value) {
@@ -205,18 +207,22 @@ function extend (Y /* :any */) {
           var typeid = this.os.getNextOpId(1)
           insert.opContent = typeid
           // construct a new type
-          eventHandler.awaitAndPrematurelyCall([insert])
           this.os.requestTransaction(function *() {
             var type = yield* this.createType(typeDefinition, typeid)
             yield* eventHandler.awaitOps(this, this.applyCreatedOperations, [[insert]])
             resolve(type)
           })
+          // always remember to do that after this.os.requestTransaction
+          // (otherwise values might contain a undefined reference to type)
+          eventHandler.awaitAndPrematurelyCall([insert])
         } else {
           insert.content = [value]
-          eventHandler.awaitAndPrematurelyCall([insert])
           this.os.requestTransaction(function * () {
             yield* eventHandler.awaitOps(this, this.applyCreatedOperations, [[insert]])
           })
+          // always remember to do that after this.os.requestTransaction
+          // (otherwise values might contain a undefined reference to type)
+          eventHandler.awaitAndPrematurelyCall([insert])
           resolve(value)
         }
       })
