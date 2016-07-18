@@ -41,7 +41,7 @@ function extend (Y /* :any */) {
         if (op.struct === 'Insert') {
           if (op.left === null) {
             var value
-            // TODO: what if op.deleted??? I partially handles this case here.. (maybe from the previous version)
+            // TODO: what if op.deleted??? I partially handles this case here.. but need to send delete event instead. somehow related to #4
             if (op.opContent != null) {
               value = () => {// eslint-disable-line
                 return new Promise((resolve) => {
@@ -334,6 +334,7 @@ function extend (Y /* :any */) {
       var map = model.map
       for (var name in map) {
         var op = yield* this.getOperation(map[name])
+        if (op.deleted) continue
         if (op.opContent != null) {
           opContents[name] = op.opContent
         } else {
