@@ -27,8 +27,8 @@ function extend (Y /* :any */) {
           let prevType = this.opContents[key]
           oldValue = () => {// eslint-disable-line
             return new Promise((resolve) => {
-              this.os.requestTransaction(function *() {// eslint-disable-line
-                var type = yield* this.getType(prevType)
+              this.os.requestTransaction(function * () {
+                var type = yield* this.store.getType.call(this, prevType)
                 resolve(type)
               })
             })
@@ -45,7 +45,7 @@ function extend (Y /* :any */) {
               value = () => {// eslint-disable-line
                 return new Promise((resolve) => {
                   this.os.requestTransaction(function *() {// eslint-disable-line
-                    var type = yield* this.getType(op.opContent)
+                    var type = yield* this.store.getType.call(this, op.opContent)
                     resolve(type)
                   })
                 })
@@ -121,7 +121,7 @@ function extend (Y /* :any */) {
         return new Promise((resolve) => {
           var oid = this.opContents[key]
           this.os.requestTransaction(function *() {
-            var type = yield* this.getType(oid)
+            var type = yield* this.store.getType.call(this, oid)
             resolve(type)
           })
         })
@@ -158,7 +158,7 @@ function extend (Y /* :any */) {
         return new Promise((resolve) => {
           var oid = this.opContents[key]
           this.os.requestTransaction(function *() {
-            var type = yield* this.getType(oid)
+            var type = yield* this.store.getType.call(this, oid)
             resolve(type)
           })
         })
@@ -203,17 +203,16 @@ function extend (Y /* :any */) {
       return new Promise((resolve) => {
         var typeDefinition = Y.utils.isTypeDefinition(value)
         if (typeDefinition !== false) {
-          var typeid = this.os.getNextOpId(1)
-          insert.opContent = typeid
+          var type = this.os.createType(typeDefinition)
+          insert.opContent = type._model
           // construct a new type
           this.os.requestTransaction(function *() {
-            var type = yield* this.createType(typeDefinition, typeid)
             yield* eventHandler.awaitOps(this, this.applyCreatedOperations, [[insert]])
-            resolve(type)
           })
           // always remember to do that after this.os.requestTransaction
           // (otherwise values might contain a undefined reference to type)
           eventHandler.awaitAndPrematurelyCall([insert])
+          resolve(type)
         } else {
           insert.content = [value]
           this.os.requestTransaction(function * () {
@@ -341,6 +340,9 @@ function extend (Y /* :any */) {
         }
       }
       return new YMap(os, model, contents, opContents)
+    },
+    createNewType: function YMapCreator (os, model) {
+      return new YMap(os, model, {}, {})
     }
   }))
 }

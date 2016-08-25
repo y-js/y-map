@@ -4,7 +4,7 @@
 
 var Y = require('../../yjs/src/SpecHelper.js')
 var numberOfYMapTests = 500
-var repeatMapTeasts = 2
+var repeatMapTeasts = 200
 
 function compareEvent (is, should) {
   for (var key in should) {
@@ -13,6 +13,7 @@ function compareEvent (is, should) {
 }
 
 for (let database of databases) {
+  if (database != 'memory') continue // TODO!   
   describe(`Map Type (DB: ${database})`, function () {
     var y1, y2, y3, y4, flushAll
 
