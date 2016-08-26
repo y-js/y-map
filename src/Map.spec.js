@@ -3,8 +3,8 @@
 'use strict'
 
 var Y = require('../../yjs/src/SpecHelper.js')
-var numberOfYMapTests = 500
-var repeatMapTeasts = 200
+var numberOfYMapTests = 20
+var repeatMapTeasts = 3
 
 function compareEvent (is, should) {
   for (var key in should) {
@@ -13,7 +13,7 @@ function compareEvent (is, should) {
 }
 
 for (let database of databases) {
-  if (database != 'memory') continue // TODO!   
+  if (database != 'memory') continue // TODO!    
   describe(`Map Type (DB: ${database})`, function () {
     var y1, y2, y3, y4, flushAll
 
@@ -43,24 +43,24 @@ for (let database of databases) {
         done()
       }))
       it('Map can set custom types (Map)', async(function * (done) {
-        var map = yield y1.set('Map', Y.Map)
+        var map = y1.set('Map', Y.Map)
         map.set('one', 1)
-        map = yield y1.get('Map')
+        map = y1.get('Map')
         expect(map.get('one')).toEqual(1)
         done()
       }))
       it('Map can set custom types (Map) - get also returns the type', async(function * (done) {
-        yield y1.set('Map', Y.Map)
-        var map = yield y1.get('Map')
+        y1.set('Map', Y.Map)
+        var map = y1.get('Map')
         map.set('one', 1)
-        map = yield y1.get('Map')
+        map = y1.get('Map')
         expect(map.get('one')).toEqual(1)
         done()
       }))
       it('Map can set custom types (Array)', async(function * (done) {
-        var array = yield y1.set('Array', Y.Array)
+        var array = y1.set('Array', Y.Array)
         array.insert(0, [1, 2, 3])
-        array = yield y1.get('Array')
+        array = y1.get('Array')
         expect(array.toArray()).toEqual([1, 2, 3])
         done()
       }))
@@ -141,14 +141,14 @@ for (let database of databases) {
             map.set('yay', 4)
           }
         })
-        yield y2.set('map', Y.Map)
+        y2.set('map', Y.Map)
         yield flushAll()
-        var map = yield y3.get('map')
+        var map = y3.get('map')
         expect(map.get('yay')).toEqual(4)
         done()
       }))
       it('observe deep properties', async(function * (done) {
-        var map1 = yield y1.set('map', Y.Map)
+        var map1 = y1.set('map', Y.Map)
         var calls = 0
         var dmapid
         map1.observe(function (event) {
@@ -157,15 +157,15 @@ for (let database of databases) {
           dmapid = event.object.opContents.deepmap
         })
         yield flushAll()
-        var map3 = yield y3.get('map')
-        yield map3.set('deepmap', Y.Map)
+        var map3 = y3.get('map')
+        map3.set('deepmap', Y.Map)
         yield flushAll()
-        var map2 = yield y2.get('map')
-        yield map2.set('deepmap', Y.Map)
+        var map2 = y2.get('map')
+        map2.set('deepmap', Y.Map)
         yield flushAll()
-        var dmap1 = yield map1.get('deepmap')
-        var dmap2 = yield map2.get('deepmap')
-        var dmap3 = yield map3.get('deepmap')
+        var dmap1 = map1.get('deepmap')
+        var dmap2 = map2.get('deepmap')
+        var dmap3 = map3.get('deepmap')
         expect(calls > 0).toBeTruthy()
         expect(dmap1._model).toEqual(dmap2._model)
         expect(dmap1._model).toEqual(dmap3._model)
@@ -193,25 +193,21 @@ for (let database of databases) {
           oldValue: 4
         })
 
-        y1.get('stuff').then(function (replacedArray) {
-          // update, oldValue is in opContents
-          y1.set('stuff', 5)
-          var getYArray = event.oldValue
-          expect(typeof getYArray.constructor === 'function').toBeTruthy()
-          getYArray().then(function (array) {
-            expect(array).toEqual(replacedArray)
+        var replacedArray = y1.get('stuff')
+        // update, oldValue is in opContents
+        y1.set('stuff', 5)
+        var array = event.oldValue
+        expect(array).toEqual(replacedArray)
 
-            // delete
-            y1.delete('stuff')
-            compareEvent(event, {
-              type: 'delete',
-              name: 'stuff',
-              object: y1,
-              oldValue: 5
-            })
-            done()
-          })
+        // delete
+        y1.delete('stuff')
+        compareEvent(event, {
+          type: 'delete',
+          name: 'stuff',
+          object: y1,
+          oldValue: 5
         })
+        done()
       }))
     })
     describeManyTimes(repeatMapTeasts, `${numberOfYMapTests} Random tests`, function () {
@@ -220,9 +216,8 @@ for (let database of databases) {
           map.set('somekey', getRandomNumber())
         },
         function setType (map) {
-          map.set('somekey', Y.Array).then(function (array) {
-            array.insert(0, [1, 2, 3, 4])
-          })
+          var array = map.set('somekey', Y.Array)
+          array.insert(0, [1, 2, 3, 4])
         },
         function delete_ (map) {
           map.delete('somekey')
