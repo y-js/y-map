@@ -294,6 +294,7 @@ function extend (Y /* :any */) {
         if (op.deleted) continue
         if (op.opContent != null) {
           opContents[name] = op.opContent
+          yield* this.store.initType.call(this, op.opContent)
         } else {
           contents[name] = op.content[0]
         }
