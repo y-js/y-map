@@ -1,7 +1,7 @@
 
 # Map Type for [Yjs](https://github.com/y-js/yjs)
 
-Manage map-like data with this shareable map type. You can insert and delete objects in y-map. The objects must either be a custom types, or fulfill the following property: `v equals JSON.parse(JSON.stringify(v))` 
+Manage map-like data with this shareable map type. You can insert and delete objects in y-map. The objects must either be a custom types, or fulfill the following property: `v equals JSON.parse(JSON.stringify(v))` (according to your definition of equality)
 
 ## Use it!
 Retrieve this with bower or npm.
