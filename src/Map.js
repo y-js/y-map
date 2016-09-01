@@ -233,7 +233,6 @@ function extend (Y /* :any */) {
       } else if (path.length === 1) {
         propertyName = path[0]
         f(self.get(propertyName))
- 
         this.observe(observeProperty)
         return function () {
           self.unobserve(f)
