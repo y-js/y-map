@@ -3,7 +3,7 @@
 'use strict'
 
 function extend (Y /* :any */) {
-  class YMap {
+  class YMap extends Y.utils.CustomType {
     /* ::
     _model: Id;
     os: Y.AbstractDatabase;
@@ -13,6 +13,7 @@ function extend (Y /* :any */) {
     eventHandler: Function;
     */
     constructor (os, model, contents, opContents) {
+      super()
       this._model = model.id
       this.os = os
       this.map = Y.utils.copyObject(model.map)
@@ -25,15 +26,7 @@ function extend (Y /* :any */) {
 
         // compute oldValue
         if (this.opContents[key] != null) {
-          let prevType = this.opContents[key]
-          oldValue = () => {// eslint-disable-line
-            return new Promise((resolve) => {
-              this.os.requestTransaction(function *() {// eslint-disable-line
-                var type = yield* this.getType(prevType)
-                resolve(type)
-              })
-            })
-          }
+          oldValue = this.os.getType(this.opContents[key])
         } else {
           oldValue = this.contents[key]
         }
@@ -43,14 +36,7 @@ function extend (Y /* :any */) {
             var value
             // TODO: what if op.deleted??? I partially handles this case here.. but need to send delete event instead. somehow related to #4
             if (op.opContent != null) {
-              value = () => {// eslint-disable-line
-                return new Promise((resolve) => {
-                  this.os.requestTransaction(function *() {// eslint-disable-line
-                    var type = yield* this.getType(op.opContent)
-                    resolve(type)
-                  })
-                })
-              }
+              value = this.os.getType(this.opContents[key])
               delete this.contents[key]
               if (op.deleted) {
                 delete this.opContents[key]
@@ -119,13 +105,7 @@ function extend (Y /* :any */) {
       if (this.opContents[key] == null) {
         return this.contents[key]
       } else {
-        return new Promise((resolve) => {
-          var oid = this.opContents[key]
-          this.os.requestTransaction(function *() {
-            var type = yield* this.getType(oid)
-            resolve(type)
-          })
-        })
+        return this.os.getType(this.opContents[key])
       }
     }
     keys () {
@@ -156,13 +136,7 @@ function extend (Y /* :any */) {
       if (key == null || typeof key !== 'string') {
         throw new Error('You must specify a key (as string)!')
       } else if (this.opContents[key] != null) {
-        return new Promise((resolve) => {
-          var oid = this.opContents[key]
-          this.os.requestTransaction(function *() {
-            var type = yield* this.getType(oid)
-            resolve(type)
-          })
-        })
+        return this.os.getType(this.opContents[key])
       } else {
         return Promise.reject('No property specified for this key!')
       }
@@ -201,31 +175,28 @@ function extend (Y /* :any */) {
         struct: 'Insert'
       }
       var eventHandler = this.eventHandler
-      return new Promise((resolve) => {
-        var typeDefinition = Y.utils.isTypeDefinition(value)
-        if (typeDefinition !== false) {
-          var typeid = this.os.getNextOpId(1)
-          insert.opContent = typeid
-          // construct a new type
-          this.os.requestTransaction(function *() {
-            var type = yield* this.createType(typeDefinition, typeid)
-            yield* eventHandler.awaitOps(this, this.applyCreatedOperations, [[insert]])
-            resolve(type)
-          })
-          // always remember to do that after this.os.requestTransaction
-          // (otherwise values might contain a undefined reference to type)
-          eventHandler.awaitAndPrematurelyCall([insert])
-        } else {
-          insert.content = [value]
-          this.os.requestTransaction(function * () {
-            yield* eventHandler.awaitOps(this, this.applyCreatedOperations, [[insert]])
-          })
-          // always remember to do that after this.os.requestTransaction
-          // (otherwise values might contain a undefined reference to type)
-          eventHandler.awaitAndPrematurelyCall([insert])
-          resolve(value)
-        }
-      })
+      var typeDefinition = Y.utils.isTypeDefinition(value)
+      if (typeDefinition !== false) {
+        var type = this.os.createType(typeDefinition)
+        insert.opContent = type._model
+        // construct a new type
+        this.os.requestTransaction(function *() {
+          yield* eventHandler.awaitOps(this, this.applyCreatedOperations, [[insert]])
+        })
+        // always remember to do that after this.os.requestTransaction
+        // (otherwise values might contain a undefined reference to type)
+        eventHandler.awaitAndPrematurelyCall([insert])
+        return type
+      } else {
+        insert.content = [value]
+        this.os.requestTransaction(function * () {
+          yield* eventHandler.awaitOps(this, this.applyCreatedOperations, [[insert]])
+        })
+        // always remember to do that after this.os.requestTransaction
+        // (otherwise values might contain a undefined reference to type)
+        eventHandler.awaitAndPrematurelyCall([insert])
+        return value
+      }
     }
     observe (f) {
       this.eventHandler.addEventListener(f)
@@ -248,49 +219,34 @@ function extend (Y /* :any */) {
     */
     observePath (path, f) {
       var self = this
+      var propertyName
       function observeProperty (event) {
         // call f whenever path changes
         if (event.name === propertyName) {
           // call this also for delete events!
-          var property = self.get(propertyName)
-          if (property instanceof Promise) {
-            property.then(f)
-          } else {
-            f(property)
-          }
+          f(self.get(propertyName))
         }
       }
 
       if (path.length < 1) {
         f(this)
-        return Promise.resolve(function () {})
+        return function () {}
       } else if (path.length === 1) {
-        var propertyName = path[0]
-        var property = self.get(propertyName)
-        if (property instanceof Promise) {
-          property.then(f)
-        } else {
-          f(property)
-        }
+        propertyName = path[0]
+        f(self.get(propertyName))
         this.observe(observeProperty)
-        return Promise.resolve(function () {
+        return function () {
           self.unobserve(f)
-        })
+        }
       } else {
         var deleteChildObservers
         var resetObserverPath = function () {
-          var promise = self.get(path[0])
-          if (!promise instanceof Promise) {
-            // its either not defined or a primitive value
-            promise = self.set(path[0], Y.Map)
+          var map = self.get(path[0])
+          if (!(map instanceof YMap)) {
+            // its either not defined or a primitive value / not a map
+            map = self.set(path[0], Y.Map)
           }
-          return promise.then(function (map) {
-            return map.observePath(path.slice(1), f)
-          }).then(function (_deleteChildObservers) {
-            // update deleteChildObservers
-            deleteChildObservers = _deleteChildObservers
-            return Promise.resolve() // Promise does not return anything
-          })
+          deleteChildObservers = map.observePath(path.slice(1), f)
         }
         var observer = function (event) {
           if (event.name === path[0]) {
@@ -304,27 +260,28 @@ function extend (Y /* :any */) {
           }
         }
         self.observe(observer)
-        return resetObserverPath().then(function () {
-          // this promise contains a function that deletes all the child observers
-          // and how to unobserve the observe from this object
-          return Promise.resolve(function () { // eslint-disable-line
-            if (deleteChildObservers != null) {
-              deleteChildObservers()
-            }
-            self.unobserve(observer)
-          })
-        })
+        resetObserverPath()
+        // this promise contains a function that deletes all the child observers
+        // and how to unobserve the observe from this object
+        return function () {
+          if (deleteChildObservers != null) {
+            deleteChildObservers()
+          }
+          self.unobserve(observer)
+        }
       }
     }
     * _changed (transaction, op) {
       if (op.struct === 'Delete') {
         var target = yield* transaction.getOperation(op.target)
         op.key = target.parentSub
+      } else if (op.opContent != null) {
+        yield* transaction.store.initType.call(transaction, op.opContent)
       }
       this.eventHandler.receivedOp(op)
     }
   }
-  Y.extend('Map', new Y.utils.CustomType({
+  Y.extend('Map', new Y.utils.CustomTypeDefinition({
     name: 'Map',
     class: YMap,
     struct: 'Map',
@@ -337,11 +294,15 @@ function extend (Y /* :any */) {
         if (op.deleted) continue
         if (op.opContent != null) {
           opContents[name] = op.opContent
+          yield* this.store.initType.call(this, op.opContent)
         } else {
           contents[name] = op.content[0]
         }
       }
       return new YMap(os, model, contents, opContents)
+    },
+    createType: function YMapCreator (os, model) {
+      return new YMap(os, model, {}, {})
     }
   }))
 }

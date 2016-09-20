@@ -1,7 +1,7 @@
 
 # Map Type for [Yjs](https://github.com/y-js/yjs)
 
-Manage map-like data with this shareable map type. You can insert and delete arbitrary objects (also custom types for Yjs).
+Manage map-like data with this shareable map type. You can insert and delete objects in y-map. The objects must either be a custom types, or fulfill the following property: `v equals JSON.parse(JSON.stringify(v))` (according to your definition of equality)
 
 ## Use it!
 Retrieve this with bower or npm.
@@ -21,28 +21,27 @@ Y.Map mimics the behaviour of a javascript Object. You can create, update, and r
 
 ##### Reference
 * .get(key)
-  * Retrieve the value for key. If the value is a type, `.get(key)` returns a promise. Otherwise it returns the value
-* .getPrimitive(key)
-  * Retrieve the value for a key, if it is a primitive value (not a shared type - e.g. a number, string, or javascript object)
-* .getType(key)
-  * Retrieve the value for a key, if it is a shared type (e.g. when created with `map.set(key, Y.Text)`)
-  * Always returns a Promise (is rejected when no value that is a type exists)
+  * Retrieve the value for key
 * .set(key, value)
-  * Set/update a property. `value` may be a primitive type, or a custom type definition (e.g. `map.set(key, Y.Map)`)
+  * Set/update a property 
+  * You can also insert a type `map.set(key, Y.Map)`
+  * If not a shared type, the value should fulfill the following property: `value equals JSON.parse(JSON.stringify(value))` (according to your notion of equality)
 * .delete(key)
   * Delete a property
 * .keys()
   * Returns all keys for all values
-* .keysPrimitives()
-  * Returns all keys for all primitive values
-* .keysTypes()
-  * Returns all keys for all type values
 * .observe(observer)
   * The `observer` is called whenever something on this object changes. Throws *add*, *update*, and *delete* events
+  * The `event` object has the following properties:
+    * `event.type` The type of the event. "add" - a new key-value pair was added, "update" - an existing key-value pair was changed, or "delete" - a key-value pair was deleted)
+    * `event.name` The key of the changed property
+    * `event.value` If event type is either "update" or "add", this property defines the new value of the key-value pair
+    * `event.object` The object on which the event occured (The object on which `.observe(..)` was called)
 * .observePath(path, observer)
   * `path` is an array of property keys
-  * `observer` is when the value under the path is found.
+  * `observer` is when the value under the path is found
   * `observer` is called when the property under `path` is set, deleted, or updated
+  * returns a function which, if called, removes the observer from the path
 * .unobserve(f)
   * Delete an observer
 
@@ -61,7 +60,14 @@ When users create/update/delete the same property concurrently, only one change 
 * Apply an update operation from another user (set/update a property)
   * Yjs does not transform against operations that do not conflict with each other.
   * An operation conflicts with another operation if it changes the same property.
-  * Overall worst case complexety: O(|conflicts|!)
+  * Overall worst case complexety: O(|conflicts|^)
+
+## Changelog
+
+### 10.0.0
+* inserting & retrieving types are synchronous operations
+  * I.e. `y.share.map.get('some type') // => returns a type instead of a promise
+* relies on Yjs@^12.0.0
 
 ## License
 Yjs is licensed under the [MIT License](./LICENSE.txt).
