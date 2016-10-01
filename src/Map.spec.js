@@ -209,6 +209,48 @@ for (let database of databases) {
         })
         done()
       }))
+      it('event has correct value when setting a primitive on a YMap (same user)', async(function * (done) {
+        var event
+        yield flushAll()
+        y1.observe(function (e) {
+          event = e
+        })
+        yield y1.set('stuff', 2)
+        expect(event.value).toEqual(event.object.get(event.name))
+        done()
+      }))
+      it('event has correct value when setting a primitive on a YMap (received from another user)', async(function * (done) {
+        var event
+        yield flushAll()
+        y1.observe(function (e) {
+          event = e
+        })
+        yield y2.set('stuff', 2)
+        yield flushAll()
+        expect(event.value).toEqual(event.object.get(event.name))
+        done()
+      }))
+      it('event has correct value when setting a type on a YMap (same user)', async(function * (done) {
+        var event
+        yield flushAll()
+        y1.observe(function (e) {
+          event = e
+        })
+        yield y1.set('stuff', Y.Map)
+        expect(event.value).toEqual(event.object.get(event.name))
+        done()
+      }))
+      it('event has correct value when setting a type on a YMap (ops received from another user)', async(function * (done) {
+        var event
+        yield flushAll()
+        y1.observe(function (e) {
+          event = e
+        })
+        yield y2.set('stuff', Y.Map)
+        yield flushAll()
+        expect(event.value).toEqual(event.object.get(event.name))
+        done()
+      }))
     })
     describeManyTimes(repeatMapTeasts, `${numberOfYMapTests} Random tests`, function () {
       var randomMapTransactions = [
