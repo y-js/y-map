@@ -272,8 +272,10 @@ function extend (Y /* :any */) {
     }
     * _changed (transaction, op) {
       if (op.struct === 'Delete') {
-        var target = yield* transaction.getOperation(op.target)
-        op.key = target.parentSub
+        if (op.key == null) {
+          var target = yield* transaction.getOperation(op.target)
+          op.key = target.parentSub
+        }
       } else if (op.opContent != null) {
         yield* transaction.store.initType.call(transaction, op.opContent)
       }

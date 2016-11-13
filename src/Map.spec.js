@@ -3,7 +3,7 @@
 'use strict'
 
 var Y = require('../../yjs/src/SpecHelper.js')
-var numberOfYMapTests = 20
+var numberOfYMapTests = 800
 var repeatMapTeasts = 3
 
 function compareEvent (is, should) {
