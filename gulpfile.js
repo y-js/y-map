@@ -8,7 +8,7 @@ require('../yjs/gulpfile.helper.js')(gulp, {
   polyfills: [],
   entry: './src/Map.js',
   targetName: 'y-map.js',
-  moduleName: 'y-map',
+  moduleName: 'yMap',
   specs: ['./src/Map.spec.js']
 })
 
