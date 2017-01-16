@@ -137,7 +137,7 @@ function extend (Y /* :any */) {
       } else if (this.opContents[key] != null) {
         return this.os.getType(this.opContents[key])
       } else {
-        return Promise.reject('No property specified for this key!')
+        return null
       }
     }
     delete (key) {
