@@ -97,7 +97,7 @@ function extend (Y /* :any */) {
     get (key) {
       // return property.
       // if property does not exist, return null
-      // if property is a type, return a promise
+      // if property is a type, return it
       if (key == null || typeof key !== 'string') {
         throw new Error('You must specify a key (as string)!')
       }
@@ -160,7 +160,7 @@ function extend (Y /* :any */) {
     }
     set (key, value) {
       // set property.
-      // if property is a type, return a promise
+      // if property is a type, return it
       // if not, apply immediately on this type an call event
 
       var right = this.map[key] || null
@@ -214,7 +214,7 @@ function extend (Y /* :any */) {
         t.bind(textarea)
       })
 
-      returns a Promise that contains a function that removes the observer from the path.
+      returns a function that removes the observer from the path.
     */
     observePath (path, f) {
       var self = this
@@ -260,7 +260,7 @@ function extend (Y /* :any */) {
         }
         self.observe(observer)
         resetObserverPath()
-        // this promise contains a function that deletes all the child observers
+        // returns a function that deletes all the child observers
         // and how to unobserve the observe from this object
         return function () {
           if (deleteChildObservers != null) {
