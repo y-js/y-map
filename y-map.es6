@@ -1,4 +1,10 @@
-(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+/**
+ * yjs - A framework for real-time p2p shared editing on any data
+ * @version v12.1.4
+ * @link http://y-js.org
+ * @license MIT
+ */
+(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.yMap = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 /* global Y */
 'use strict'
 
@@ -98,7 +104,7 @@ function extend (Y /* :any */) {
     get (key) {
       // return property.
       // if property does not exist, return null
-      // if property is a type, return a promise
+      // if property is a type, return it
       if (key == null || typeof key !== 'string') {
         throw new Error('You must specify a key (as string)!')
       }
@@ -138,7 +144,7 @@ function extend (Y /* :any */) {
       } else if (this.opContents[key] != null) {
         return this.os.getType(this.opContents[key])
       } else {
-        return Promise.reject('No property specified for this key!')
+        return null
       }
     }
     delete (key) {
@@ -161,7 +167,7 @@ function extend (Y /* :any */) {
     }
     set (key, value) {
       // set property.
-      // if property is a type, return a promise
+      // if property is a type, return it
       // if not, apply immediately on this type an call event
 
       var right = this.map[key] || null
@@ -215,7 +221,7 @@ function extend (Y /* :any */) {
         t.bind(textarea)
       })
 
-      returns a Promise that contains a function that removes the observer from the path.
+      returns a function that removes the observer from the path.
     */
     observePath (path, f) {
       var self = this
@@ -261,7 +267,7 @@ function extend (Y /* :any */) {
         }
         self.observe(observer)
         resetObserverPath()
-        // this promise contains a function that deletes all the child observers
+        // returns a function that deletes all the child observers
         // and how to unobserve the observe from this object
         return function () {
           if (deleteChildObservers != null) {
@@ -314,5 +320,6 @@ if (typeof Y !== 'undefined') {
   extend(Y)
 }
 
-},{}]},{},[1])
+},{}]},{},[1])(1)
+});
 
