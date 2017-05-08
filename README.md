@@ -36,7 +36,7 @@ Y.Map mimics the behaviour of a javascript Object. You can create, update, and r
     * `event.type` The type of the event. "add" - a new key-value pair was added, "update" - an existing key-value pair was changed, or "delete" - a key-value pair was deleted)
     * `event.name` The key of the changed property
     * `event.value` If event type is either "update" or "add", this property defines the new value of the key-value pair
-    * `event.object` The object on which the event occured (The object on which `.observe(..)` was called)
+    * `event.object` The object on which the event occurred (The object on which `.observe(..)` was called)
 * .observeDeep(function observer(event){..})
   * Same as .observe, but catches events from all children (if they support .observeDeep)
   * `event.path` specifies the path of the change event
