@@ -14,6 +14,9 @@ function extend (Y /* :any */) {
     constructor (os, model, contents, opContents) {
       super()
       this._model = model.id
+      this._parent = null
+      this._parentSub = null
+      this._deepEventHandler = new Y.utils.EventListenerHandler()
       this.os = os
       this.map = Y.utils.copyObject(model.map)
       this.contents = contents
@@ -36,6 +39,8 @@ function extend (Y /* :any */) {
             // TODO: what if op.deleted??? I partially handles this case here.. but need to send delete event instead. somehow related to #4
             if (op.opContent != null) {
               value = this.os.getType(op.opContent)
+              value._parent = this._model
+              value._parentSub = key
               delete this.contents[key]
               if (op.deleted) {
                 delete this.opContents[key]
@@ -53,14 +58,14 @@ function extend (Y /* :any */) {
             }
             this.map[key] = op.id
             if (oldValue === undefined) {
-              this.eventHandler.callEventListeners({
+              Y.utils.bubbleEvent(this, {
                 name: key,
                 object: this,
                 type: 'add',
                 value: value
               })
             } else {
-              this.eventHandler.callEventListeners({
+              Y.utils.bubbleEvent(this, {
                 name: key,
                 object: this,
                 oldValue: oldValue,
@@ -73,7 +78,7 @@ function extend (Y /* :any */) {
           if (Y.utils.compareIds(this.map[key], op.target)) {
             delete this.opContents[key]
             delete this.contents[key]
-            this.eventHandler.callEventListeners({
+            Y.utils.bubbleEvent(this, {
               name: key,
               object: this,
               oldValue: oldValue,
@@ -91,6 +96,8 @@ function extend (Y /* :any */) {
       this.contents = null
       this.opContents = null
       this._model = null
+      this._parent = null
+      this._parentSub = null
       this.os = null
       this.map = null
     }
@@ -200,8 +207,14 @@ function extend (Y /* :any */) {
     observe (f) {
       this.eventHandler.addEventListener(f)
     }
+    observeDeep (f) {
+      this._deepEventHandler.addEventListener(f)
+    }
     unobserve (f) {
       this.eventHandler.removeEventListener(f)
+    }
+    unobserveDeep (f) {
+      this._deepEventHandler.addEventListener(f)
     }
     /*
       Observe a path.

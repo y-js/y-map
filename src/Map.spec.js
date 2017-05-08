@@ -3,8 +3,8 @@
 'use strict'
 
 var Y = require('../../yjs/src/SpecHelper.js')
-var numberOfYMapTests = 800
-var repeatMapTeasts = 3
+var numberOfYMapTests = 300
+var repeatMapTeasts = 30
 
 function compareEvent (is, should) {
   for (var key in should) {
@@ -170,6 +170,20 @@ for (let database of databases) {
         expect(dmap1._model).toEqual(dmap2._model)
         expect(dmap1._model).toEqual(dmap3._model)
         expect(dmap1._model).toEqual(dmapid)
+        done()
+      }))
+      it('observes using observePath', async(function * (done) {
+        var pathes = []
+        var calls = 0
+        y1.observeDeep(function (event) {
+          pathes.push(event.path)
+          calls++
+        })
+        y1.set('map', Y.Map)
+        y1.get('map').set('array', Y.Array)
+        y1.get('map').get('array').insert(0, ['content'])
+        expect(calls === 3).toBeTruthy()
+        expect(pathes).toEqual([[], ['map'], ['map', 'array']])
         done()
       }))
       it('throws add & update & delete events (with type and primitive content)', async(function * (done) {
