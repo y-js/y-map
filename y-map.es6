@@ -1,4 +1,10 @@
-(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+/**
+ * yjs - A framework for real-time p2p shared editing on any data
+ * @version v12.3.1
+ * @link http://y-js.org
+ * @license MIT
+ */
+(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.yMap = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 /* global Y */
 'use strict'
 
@@ -15,6 +21,8 @@ function extend (Y /* :any */) {
     constructor (os, model, contents, opContents) {
       super()
       this._model = model.id
+      this._parent = null
+      this._deepEventHandler = new Y.utils.EventListenerHandler()
       this.os = os
       this.map = Y.utils.copyObject(model.map)
       this.contents = contents
@@ -37,6 +45,7 @@ function extend (Y /* :any */) {
             // TODO: what if op.deleted??? I partially handles this case here.. but need to send delete event instead. somehow related to #4
             if (op.opContent != null) {
               value = this.os.getType(op.opContent)
+              value._parent = this._model
               delete this.contents[key]
               if (op.deleted) {
                 delete this.opContents[key]
@@ -54,14 +63,14 @@ function extend (Y /* :any */) {
             }
             this.map[key] = op.id
             if (oldValue === undefined) {
-              this.eventHandler.callEventListeners({
+              Y.utils.bubbleEvent(this, {
                 name: key,
                 object: this,
                 type: 'add',
                 value: value
               })
             } else {
-              this.eventHandler.callEventListeners({
+              Y.utils.bubbleEvent(this, {
                 name: key,
                 object: this,
                 oldValue: oldValue,
@@ -74,7 +83,7 @@ function extend (Y /* :any */) {
           if (Y.utils.compareIds(this.map[key], op.target)) {
             delete this.opContents[key]
             delete this.contents[key]
-            this.eventHandler.callEventListeners({
+            Y.utils.bubbleEvent(this, {
               name: key,
               object: this,
               oldValue: oldValue,
@@ -86,19 +95,25 @@ function extend (Y /* :any */) {
         }
       })
     }
+    _getPathToChild (childId) {
+      return Object.keys(this.opContents).find(key =>
+        Y.utils.compareIds(this.opContents[key], childId)
+      )
+    }
     _destroy () {
       this.eventHandler.destroy()
       this.eventHandler = null
       this.contents = null
       this.opContents = null
       this._model = null
+      this._parent = null
       this.os = null
       this.map = null
     }
     get (key) {
       // return property.
       // if property does not exist, return null
-      // if property is a type, return a promise
+      // if property is a type, return it
       if (key == null || typeof key !== 'string') {
         throw new Error('You must specify a key (as string)!')
       }
@@ -138,7 +153,7 @@ function extend (Y /* :any */) {
       } else if (this.opContents[key] != null) {
         return this.os.getType(this.opContents[key])
       } else {
-        return Promise.reject('No property specified for this key!')
+        return null
       }
     }
     delete (key) {
@@ -161,7 +176,7 @@ function extend (Y /* :any */) {
     }
     set (key, value) {
       // set property.
-      // if property is a type, return a promise
+      // if property is a type, return it
       // if not, apply immediately on this type an call event
 
       var right = this.map[key] || null
@@ -201,8 +216,14 @@ function extend (Y /* :any */) {
     observe (f) {
       this.eventHandler.addEventListener(f)
     }
+    observeDeep (f) {
+      this._deepEventHandler.addEventListener(f)
+    }
     unobserve (f) {
       this.eventHandler.removeEventListener(f)
+    }
+    unobserveDeep (f) {
+      this._deepEventHandler.addEventListener(f)
     }
     /*
       Observe a path.
@@ -215,7 +236,7 @@ function extend (Y /* :any */) {
         t.bind(textarea)
       })
 
-      returns a Promise that contains a function that removes the observer from the path.
+      returns a function that removes the observer from the path.
     */
     observePath (path, f) {
       var self = this
@@ -261,7 +282,7 @@ function extend (Y /* :any */) {
         }
         self.observe(observer)
         resetObserverPath()
-        // this promise contains a function that deletes all the child observers
+        // returns a function that deletes all the child observers
         // and how to unobserve the observe from this object
         return function () {
           if (deleteChildObservers != null) {
@@ -296,7 +317,8 @@ function extend (Y /* :any */) {
         if (op.deleted) continue
         if (op.opContent != null) {
           opContents[name] = op.opContent
-          yield* this.store.initType.call(this, op.opContent)
+          var type = yield* this.store.initType.call(this, op.opContent)
+          type._parent = model.id
         } else {
           contents[name] = op.content[0]
         }
@@ -314,5 +336,6 @@ if (typeof Y !== 'undefined') {
   extend(Y)
 }
 
-},{}]},{},[1])
+},{}]},{},[1])(1)
+});
 

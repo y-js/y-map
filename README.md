@@ -23,7 +23,7 @@ Y.Map mimics the behaviour of a javascript Object. You can create, update, and r
 * .get(key)
   * Retrieve the value for key
 * .set(key, value)
-  * Set/update a property 
+  * Set/update a property
   * You can also insert a type `map.set(key, Y.Map)`
   * If not a shared type, the value should fulfill the following property: `value equals JSON.parse(JSON.stringify(value))` (according to your notion of equality)
 * .delete(key)
@@ -36,8 +36,11 @@ Y.Map mimics the behaviour of a javascript Object. You can create, update, and r
     * `event.type` The type of the event. "add" - a new key-value pair was added, "update" - an existing key-value pair was changed, or "delete" - a key-value pair was deleted)
     * `event.name` The key of the changed property
     * `event.value` If event type is either "update" or "add", this property defines the new value of the key-value pair
-    * `event.object` The object on which the event occured (The object on which `.observe(..)` was called)
-* .observePath(path, observer)
+    * `event.object` The object on which the event occurred (The object on which `.observe(..)` was called)
+* .observeDeep(function observer(event){..})
+  * Same as .observe, but catches events from all children (if they support .observeDeep)
+  * `event.path` specifies the path of the change event
+* .observePath(path, observer) *deprecated*
   * `path` is an array of property keys
   * `observer` is when the value under the path is found
   * `observer` is called when the property under `path` is set, deleted, or updated
