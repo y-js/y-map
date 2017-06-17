@@ -15,7 +15,6 @@ function extend (Y /* :any */) {
       super()
       this._model = model.id
       this._parent = null
-      this._parentSub = null
       this._deepEventHandler = new Y.utils.EventListenerHandler()
       this.os = os
       this.map = Y.utils.copyObject(model.map)
@@ -40,7 +39,6 @@ function extend (Y /* :any */) {
             if (op.opContent != null) {
               value = this.os.getType(op.opContent)
               value._parent = this._model
-              value._parentSub = key
               delete this.contents[key]
               if (op.deleted) {
                 delete this.opContents[key]
@@ -90,6 +88,11 @@ function extend (Y /* :any */) {
         }
       })
     }
+    _getPathToChild (childId) {
+      return Object.keys(this.opContents).find(key =>
+        Y.utils.compareIds(this.opContents[key], childId)
+      )
+    }
     _destroy () {
       this.eventHandler.destroy()
       this.eventHandler = null
@@ -97,7 +100,6 @@ function extend (Y /* :any */) {
       this.opContents = null
       this._model = null
       this._parent = null
-      this._parentSub = null
       this.os = null
       this.map = null
     }
@@ -308,7 +310,8 @@ function extend (Y /* :any */) {
         if (op.deleted) continue
         if (op.opContent != null) {
           opContents[name] = op.opContent
-          yield* this.store.initType.call(this, op.opContent)
+          var type = yield* this.store.initType.call(this, op.opContent)
+          type._parent = model.id
         } else {
           contents[name] = op.content[0]
         }
