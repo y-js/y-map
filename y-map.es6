@@ -1,6 +1,6 @@
 /**
  * yjs - A framework for real-time p2p shared editing on any data
- * @version v12.3.1
+ * @version v12.3.2
  * @link http://y-js.org
  * @license MIT
  */
@@ -223,7 +223,7 @@ function extend (Y /* :any */) {
       this.eventHandler.removeEventListener(f)
     }
     unobserveDeep (f) {
-      this._deepEventHandler.addEventListener(f)
+      this._deepEventHandler.removeEventListener(f)
     }
     /*
       Observe a path.
