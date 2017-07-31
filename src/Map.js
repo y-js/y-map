@@ -216,7 +216,7 @@ function extend (Y /* :any */) {
       this.eventHandler.removeEventListener(f)
     }
     unobserveDeep (f) {
-      this._deepEventHandler.addEventListener(f)
+      this._deepEventHandler.removeEventListener(f)
     }
     /*
       Observe a path.
