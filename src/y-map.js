@@ -1,16 +1,7 @@
 /* global Y */
-'use strict'
 
-function extend (Y /* :any */) {
+export default function extendYMap (Y) {
   class YMap extends Y.utils.CustomType {
-    /* ::
-    _model: Id;
-    os: Y.AbstractDatabase;
-    map: Object;
-    contents: any;
-    opContents: Object;
-    eventHandler: Function;
-    */
     constructor (os, model, contents, opContents) {
       super()
       this._model = model.id
@@ -159,8 +150,8 @@ function extend (Y /* :any */) {
         var eventHandler = this.eventHandler
         var modDel = Y.utils.copyObject(del)
         modDel.key = key
-        this.os.requestTransaction(function *() {
-          yield* eventHandler.awaitOps(this, this.applyCreatedOperations, [[del]])
+        this.os.requestTransaction(function () {
+          eventHandler.awaitOps(this, this.applyCreatedOperations, [[del]])
         })
         // always remember to do that after this.os.requestTransaction
         // (otherwise values might contain a undefined reference to type)
@@ -173,7 +164,7 @@ function extend (Y /* :any */) {
       // if not, apply immediately on this type an call event
 
       var right = this.map[key] || null
-      var insert /* :any */ = {
+      var insert = {
         id: this.os.getNextOpId(1),
         left: null,
         right: right,
@@ -188,8 +179,8 @@ function extend (Y /* :any */) {
         var type = this.os.createType(typeDefinition)
         insert.opContent = type._model
         // construct a new type
-        this.os.requestTransaction(function *() {
-          yield* eventHandler.awaitOps(this, this.applyCreatedOperations, [[insert]])
+        this.os.requestTransaction(function () {
+          eventHandler.awaitOps(this, this.applyCreatedOperations, [[insert]])
         })
         // always remember to do that after this.os.requestTransaction
         // (otherwise values might contain a undefined reference to type)
@@ -197,8 +188,8 @@ function extend (Y /* :any */) {
         return type
       } else {
         insert.content = [value]
-        this.os.requestTransaction(function * () {
-          yield* eventHandler.awaitOps(this, this.applyCreatedOperations, [[insert]])
+        this.os.requestTransaction(function () {
+          eventHandler.awaitOps(this, this.applyCreatedOperations, [[insert]])
         })
         // always remember to do that after this.os.requestTransaction
         // (otherwise values might contain a undefined reference to type)
@@ -285,14 +276,14 @@ function extend (Y /* :any */) {
         }
       }
     }
-    * _changed (transaction, op) {
+    _changed (transaction, op) {
       if (op.struct === 'Delete') {
         if (op.key == null) {
-          var target = yield* transaction.getOperation(op.target)
+          var target = transaction.getOperation(op.target)
           op.key = target.parentSub
         }
       } else if (op.opContent != null) {
-        yield* transaction.store.initType.call(transaction, op.opContent)
+        transaction.store.initType.call(transaction, op.opContent)
       }
       this.eventHandler.receivedOp(op)
     }
@@ -301,16 +292,16 @@ function extend (Y /* :any */) {
     name: 'Map',
     class: YMap,
     struct: 'Map',
-    initType: function * YMapInitializer (os, model) {
+    initType: function YMapInitializer (os, model) {
       var contents = {}
       var opContents = {}
       var map = model.map
       for (var name in map) {
-        var op = yield* this.getOperation(map[name])
+        var op = this.getOperation(map[name])
         if (op.deleted) continue
         if (op.opContent != null) {
           opContents[name] = op.opContent
-          var type = yield* this.store.initType.call(this, op.opContent)
+          var type = this.store.initType.call(this, op.opContent)
           type._parent = model.id
         } else {
           contents[name] = op.content[0]
@@ -324,7 +315,6 @@ function extend (Y /* :any */) {
   }))
 }
 
-module.exports = extend
 if (typeof Y !== 'undefined') {
-  extend(Y)
+  extendYMap(Y)
 }
