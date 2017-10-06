@@ -1,6 +1,6 @@
 {
   "name": "y-map",
-  "version": "11.0.0-0",
+  "version": "11.0.0-1",
   "description": "Map Type for Yjs",
   "main": "./y-map.node.js",
   "browser": "./y-map.js",
