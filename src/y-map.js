@@ -94,6 +94,21 @@ export default function extendYMap (Y) {
       this.os = null
       this.map = null
     }
+    toJSON () {
+      var obj = {}
+      for (let key in this.contents) {
+        obj[key] = this.contents[key]
+      }
+      for (let key in this.opContents) {
+        let type = this.os.getType(this.opContents[key])
+        if (type.toJSON != null) {
+          obj[key] = type.toJSON()
+        } else if (type.toString != null) {
+          obj[key] = type.toString()
+        }
+      }
+      return obj
+    }
     get (key) {
       // return property.
       // if property does not exist, return null
